@@ -1,4 +1,9 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -7,6 +12,7 @@ import { Repository } from 'typeorm';
 import * as bcryptjs from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service';
+import { jwtConstants } from 'src/common/constants/jwt.constants';
 
 export interface UserRo {
   list: User[];
@@ -20,9 +26,31 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly JwtService: JwtService,
+    private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
   ) {}
+
+  generateTokens(user: User) {
+    const access_token = this.jwtService.sign(
+      { id: user.id },
+      {
+        secret: jwtConstants.secret,
+        expiresIn: jwtConstants.expiresIn,
+      },
+    );
+
+    const refresh_token = this.jwtService.sign(
+      { id: user.id },
+      {
+        secret: jwtConstants.refreshSecret,
+        expiresIn: jwtConstants.refreshExpiresIn,
+      },
+    );
+    return {
+      access_token,
+      refresh_token,
+    };
+  }
 
   async login(loginData: CreateUserDto) {
     const user = await this.userRepository.findOne({
@@ -40,9 +68,10 @@ export class UserService {
       username: user.username,
       id: user.id,
     };
+    const tokens = this.generateTokens(user);
     return {
       ...payload,
-      access_token: this.JwtService.sign({ id: payload.id }),
+      ...tokens,
     };
   }
 
@@ -65,37 +94,32 @@ export class UserService {
     if (user) {
       throw new BadRequestException('用户名已存在');
       // throw new Error('用户名已存在')
-      throw new HttpException('用户名已存在',HttpStatus.BAD_REQUEST)
+      throw new HttpException('用户名已存在', HttpStatus.BAD_REQUEST);
     }
     password = bcryptjs.hashSync(password, 10);
     this.redisService.set(username, password);
     return await this.userRepository.save({ username, password });
   }
 
-  async findAll(page: number = 1, pageSize: number = 10): Promise<UserRo> {
-    const [users, totalCount] = await this.userRepository.findAndCount({
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      order: { created_at: 'DESC' },
-    });
-    return {
-      list: users,
-      count: totalCount,
-      totalPages: Math.ceil(totalCount / pageSize),
-      currentPage: page,
-    };
-  }
-
-  async findOne(id: string) {
-    return await this.userRepository.findOne({ where: { id } });
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async refreshToken(refresh_token: string) {
+    let userId = '';
+    try {
+      const { id } = this.jwtService.verify(refresh_token,{
+        secret: jwtConstants.refreshSecret
+      });
+      userId = id;
+    } catch (err) {
+      throw new HttpException(
+        '身份已过期，请重新登录[2]',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      const tokens = this.generateTokens(user);
+      return tokens;
+    } else {
+      throw new HttpException('身份已过期，请重新登录', HttpStatus.FORBIDDEN);
+    }
   }
 }
