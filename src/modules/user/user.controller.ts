@@ -3,16 +3,25 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('用户')
 @Controller('user')
 export class UserController {
   constructor(private readonly UserService: UserService) {}
 
-  @ApiOperation({summary:'创建文章'})
-  @Post('/create')
+  @Public()
+  @ApiOperation({summary:'登录'})
+  @Post('/login')
+  login(@Body() userDto: CreateUserDto){
+    return this.UserService.login(userDto)
+  }
+
+  @Public()
+  @ApiOperation({summary:'注册'})
+  @Post('/register')
   create(@Body() createUserDto: CreateUserDto) {
-    return this.UserService.create(createUserDto);
+    return this.UserService.register(createUserDto);
   }
 
   @Get()

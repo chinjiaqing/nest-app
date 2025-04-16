@@ -6,6 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './modules/user/user.module';
 import { User } from './modules/user/entities/user.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { jwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -18,9 +20,7 @@ import { User } from './modules/user/entities/user.entity';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         type: 'mysql',
-        entities: [
-          User
-        ],
+        entities: [User],
         host: configService.get('DB_HOST'),
         port: configService.get<number>('DB_PORT'), // 端口号
         username: configService.get('DB_USER'), // 用户名
@@ -33,6 +33,12 @@ import { User } from './modules/user/entities/user.entity';
     UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: jwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}
