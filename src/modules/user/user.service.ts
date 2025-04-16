@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -63,8 +63,9 @@ export class UserService {
     }
     const user = await this.userRepository.findOne({ where: { username } });
     if (user) {
-      // return new BadRequestException('用户名已存在');
-      throw new HttpException('用户名已存在',401)
+      throw new BadRequestException('用户名已存在');
+      // throw new Error('用户名已存在')
+      throw new HttpException('用户名已存在',HttpStatus.BAD_REQUEST)
     }
     password = bcryptjs.hashSync(password, 10);
     this.redisService.set(username, password);

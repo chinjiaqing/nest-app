@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import envConfig from './config/env';
@@ -12,6 +12,7 @@ import { RedisService } from './modules/redis/redis.service';
 import { RedisModule } from './modules/redis/redis.module';
 import { LoggerService } from './modules/logger/logger.service';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { RequestContextMiddleware } from './common/middlewares/request-context.middleware';
 
 @Module({
   imports: [
@@ -48,4 +49,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     LoggerService,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer:MiddlewareConsumer){
+    consumer.apply(RequestContextMiddleware).forRoutes('*')
+  }
+}

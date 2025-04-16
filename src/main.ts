@@ -10,7 +10,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as path from 'path';
 import { LoggerService } from './modules/logger/logger.service';
-import { BadRequestExceptionFilter } from './common/filters/bad-request.filter';
+import { GlobalErrorExceptionFilter } from './common/filters/error-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -30,8 +30,8 @@ async function bootstrap() {
   const loggerService = app.get(LoggerService)
 
   // 过滤器
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalFilters(new BadRequestExceptionFilter())
+  app.useGlobalFilters(new GlobalErrorExceptionFilter(loggerService))
+  app.useGlobalFilters(new HttpExceptionFilter(loggerService));
   app.useGlobalInterceptors(new TransformInterceptor(loggerService));
 
   // swagger文档
