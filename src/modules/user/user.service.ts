@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcryptjs from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { RedisService } from '../redis/redis.service';
 
 export interface UserRo {
   list: User[];
@@ -20,6 +21,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly JwtService: JwtService,
+    private readonly redisService: RedisService,
   ) {}
 
   async login(loginData: CreateUserDto) {
@@ -64,6 +66,7 @@ export class UserService {
       return new BadRequestException('用户名已存在');
     }
     password = bcryptjs.hashSync(password, 10);
+    this.redisService.set(username, password);
     return await this.userRepository.save({ username, password });
   }
 
