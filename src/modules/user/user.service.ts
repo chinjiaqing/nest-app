@@ -30,12 +30,12 @@ export class UserService {
         username: loginData.username,
       },
     });
-    if (!user) return new BadRequestException(`用户不存在`);
+    if (!user) throw new BadRequestException(`用户不存在`);
     const pass: boolean = bcryptjs.compareSync(
       loginData.password,
       user.password,
     );
-    if (!pass) return new BadRequestException('用户名或密码错误');
+    if (!pass) throw new BadRequestException('用户名或密码错误');
     const payload = {
       username: user.username,
       id: user.id,
@@ -50,16 +50,16 @@ export class UserService {
     let { username, password } = createUserDto;
     username = username.trim();
     if (!username) {
-      return new BadRequestException('用户名不能为空');
+      throw new BadRequestException('用户名不能为空');
     }
     if (username.length > 20 || username.length < 6) {
-      return new BadRequestException('用户名应在6-20个字符之间');
+      throw new BadRequestException('用户名应在6-20个字符之间');
     }
     if (!password) {
-      return new BadRequestException('密码不能为空');
+      throw new BadRequestException('密码不能为空');
     }
     if (password.length < 6 || password.length > 20) {
-      return new BadRequestException('密码应在6-20个字符之间');
+      throw new BadRequestException('密码应在6-20个字符之间');
     }
     const user = await this.userRepository.findOne({ where: { username } });
     if (user) {
