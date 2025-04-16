@@ -6,10 +6,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './modules/user/user.module';
 import { User } from './modules/user/entities/user.entity';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { jwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RedisService } from './modules/redis/redis.service';
 import { RedisModule } from './modules/redis/redis.module';
+import { LoggerService } from './modules/logger/logger.service';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { RedisModule } from './modules/redis/redis.module';
       useClass: jwtAuthGuard,
     },
     RedisService,
+    LoggerService,
   ],
 })
 export class AppModule {}

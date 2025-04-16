@@ -9,6 +9,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as path from 'path';
+import { LoggerService } from './modules/logger/logger.service';
+import { BadRequestExceptionFilter } from './common/filters/bad-request.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -25,9 +27,12 @@ async function bootstrap() {
   // 全局管道
   app.useGlobalPipes(new ValidationPipe());
 
+  const loggerService = app.get(LoggerService)
+
   // 过滤器
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalFilters(new BadRequestExceptionFilter())
+  app.useGlobalInterceptors(new TransformInterceptor(loggerService));
 
   // swagger文档
   const swaggerConfig = new DocumentBuilder()

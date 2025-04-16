@@ -63,7 +63,8 @@ export class UserService {
     }
     const user = await this.userRepository.findOne({ where: { username } });
     if (user) {
-      return new BadRequestException('用户名已存在');
+      // return new BadRequestException('用户名已存在');
+      throw new HttpException('用户名已存在',401)
     }
     password = bcryptjs.hashSync(password, 10);
     this.redisService.set(username, password);
