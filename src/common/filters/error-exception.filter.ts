@@ -14,6 +14,11 @@ export class GlobalErrorExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: LoggerService) {}
 
   catch(exception: Error, host: ArgumentsHost) {
+    console.log(
+      '%c [ exception ]-17',
+      'font-size:13px; background:pink; color:#bf2c9f;',
+      exception,
+    );
     const ctx = host.switchToHttp(); // 获取请求上下文
     const response = ctx.getResponse<FastifyReply>(); // 获取请求上下文中的 response对象
     let statusCode: number = 500; // 获取异常状态码

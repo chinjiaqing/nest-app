@@ -13,7 +13,7 @@ import {
 } from '../stores/request-context.store';
 import { LoggerService } from 'src/modules/logger/logger.service';
 import { apiMessageConstants } from '../constants/api-message.constants';
-import { FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -21,6 +21,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp(); // 获取请求上下文
+    const request = ctx.getRequest<FastifyRequest>();
     const response = ctx.getResponse<FastifyReply>(); // 获取请求上下文中的 response对象
     const status = exception.getStatus(); // 获取异常状态码
     const exceptionResponse = exception.getResponse() as HttpExceptionBody;
@@ -56,6 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(status);
     response.header('Content-Type', 'application/json; charset=utf-8');
     response.send(errorResponse);
-    this.logger.info('Response', errorResponse);
+    this.logger.logRequest(request);
+    this.logger.logResponse(errorResponse);
   }
 }

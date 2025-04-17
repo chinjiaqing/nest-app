@@ -1,4 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { FastifyRequest } from 'fastify';
+import { loggerConstants } from 'src/common/constants/logger.constants';
+import { getRequestContextStore } from 'src/common/stores/request-context.store';
+import { ApiBadResponse, ApiOkResponse } from 'src/common/types';
 import { createLogger, transports, format, Logger } from 'winston';
 import 'winston-daily-rotate-file';
 
@@ -130,5 +134,41 @@ export class LoggerService {
     } else {
       this.logger.info(message);
     }
+  }
+
+  /**
+   * 敏感信息过滤器
+   */
+  private filterSensitive(obj: Record<string, any>): Record<string, any> {
+    if (!obj) return {};
+    return Object.keys(obj).reduce((acc, key) => {
+      if (loggerConstants.SENSITIVE_KEYS.includes(key.toLowerCase())) {
+        acc[key] = '******';
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        acc[key] = obj[key];
+      }
+      return acc;
+    }, {});
+  }
+
+  // 规范存储 Request
+  logRequest(request: FastifyRequest) {
+    const { method, url, headers, body, query } = request;
+    const store = getRequestContextStore();
+    const request_id = store?.get('request_id') as string;
+    this.log('Request', {
+      method,
+      url,
+      headers: this.filterSensitive(headers),
+      query: this.filterSensitive(query as Record<string, any>),
+      body: this.filterSensitive(body as Record<string, any>),
+      request_id,
+      ip: store?.get('ip') as string,
+    });
+  }
+
+  logResponse(response: ApiOkResponse | ApiBadResponse) {
+    this.log('Response', response);
   }
 }

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const isProdEnv = process.env.NODE_ENV === 'prod';
+const isProdEnv = process.env.NODE_ENV === 'production';
 
 function getEnvFile() {
   const testEnvFile = path.resolve(__dirname, '../../.env.test');
