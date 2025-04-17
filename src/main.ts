@@ -20,17 +20,17 @@ async function bootstrap() {
 
   //支持静态资源
   app.useStaticAssets({
-    root: path.resolve(__dirname,'..','public'),
+    root: path.resolve(__dirname, '..', 'public'),
     prefix: '/static/',
   });
 
   // 全局管道
   app.useGlobalPipes(new ValidationPipe());
 
-  const loggerService = app.get(LoggerService)
+  const loggerService = app.get(LoggerService);
 
   // 过滤器
-  app.useGlobalFilters(new GlobalErrorExceptionFilter(loggerService))
+  app.useGlobalFilters(new GlobalErrorExceptionFilter(loggerService));
   app.useGlobalFilters(new HttpExceptionFilter(loggerService));
   app.useGlobalInterceptors(new TransformInterceptor(loggerService));
 
@@ -46,4 +46,6 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.log('启动失败', err);
+});

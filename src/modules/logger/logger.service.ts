@@ -13,6 +13,7 @@ export class LoggerService {
         format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), // 设置时间戳格式
         format.printf(({ timestamp, level, message, ...metadata }) => {
           // 确保时间戳在日志的最前面，并且处理 metadata（如 params）
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           let logMessage = `${timestamp} [${level}] : ${message}`;
 
           // 如果有 metadata（附加的对象），将它们格式化为 JSON
@@ -43,10 +44,12 @@ export class LoggerService {
               format: 'YYYY-MM-DD HH:mm:ss',
             }),
             format.printf((info) => {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               const paramsInfo = JSON.parse(JSON.stringify(info));
               // 避免 message 字段在日志中作为 key 出现
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
               delete paramsInfo.message;
-              return `${info.timestamp} [${info.level}] : ${info.message} ${
+              return `${info.timestamp as string} [${info.level}] : ${info.message as string} ${
                 Object.keys(info).length
                   ? JSON.stringify(paramsInfo, null, 2)
                   : ''

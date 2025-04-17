@@ -6,7 +6,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +13,7 @@ import * as bcryptjs from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service';
 import { jwtConstants } from 'src/common/constants/jwt.constants';
+import { JwtUserCheckedPayload } from 'src/common/types';
 
 export interface UserRo {
   list: User[];
@@ -98,14 +98,16 @@ export class UserService {
       throw new HttpException('用户名已存在', HttpStatus.BAD_REQUEST);
     }
     password = bcryptjs.hashSync(password, 10);
-    this.redisService.set(username, password);
     return await this.userRepository.save({ username, password });
   }
 
   async refreshToken(refresh_token: string) {
-    const payload = this.jwtService.verify(refresh_token, {
-      secret: jwtConstants.refreshSecret,
-    });
+    const payload = this.jwtService.verify<JwtUserCheckedPayload>(
+      refresh_token,
+      {
+        secret: jwtConstants.refreshSecret,
+      },
+    );
     console.log(
       '%c [ payload ]-110',
       'font-size:13px; background:pink; color:#bf2c9f;',

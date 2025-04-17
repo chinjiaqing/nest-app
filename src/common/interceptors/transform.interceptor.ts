@@ -4,13 +4,14 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { Observable, map, tap, throwError, catchError, timestamp } from 'rxjs';
+import { Observable, map, tap, throwError, catchError } from 'rxjs';
 import { LoggerService } from 'src/modules/logger/logger.service';
 import {
   getRequestContextStore,
   getResponseTime,
 } from '../stores/request-context.store';
 import { ApiOkResponse } from '../types';
+import { FastifyRequest } from 'fastify';
 
 // 通用的api相应格式
 @Injectable()
@@ -29,15 +30,15 @@ export class TransformInterceptor<T>
     next: CallHandler,
   ): Observable<ApiOkResponse<T>> {
     const ctx = context.switchToHttp();
-    const request = ctx.getRequest();
+    const request = ctx.getRequest<FastifyRequest>();
 
     // 记录请求日志（带敏感信息过滤）
     this.logRequest(request);
 
     return next.handle().pipe(
-      catchError((err) => {
+      catchError((err: Error) => {
         const store = getRequestContextStore();
-        const request_id = store?.get('request_id');
+        const request_id = store?.get('request_id') as string;
         this.logger.error('Error', {
           request_id,
           message: err.message || 'unknown error',
@@ -62,30 +63,30 @@ export class TransformInterceptor<T>
     const store = getRequestContextStore();
     return {
       code: 0,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: data,
       msg: 'success',
-      request_id: store?.get('request_id'),
+      request_id: store?.get('request_id') as string,
       timestamp: Date.now(),
       response_time: getResponseTime(),
     };
   }
 
-
   /**
    * 记录请求日志（带敏感信息过滤）
    */
-  private logRequest(request: any) {
+  private logRequest(request: FastifyRequest) {
     const { method, url, headers, body, query } = request;
     const store = getRequestContextStore();
-    const request_id = store?.get('request_id');
+    const request_id = store?.get('request_id') as string;
     this.logger.log('Request', {
       method,
       url,
       headers: this.filterSensitive(headers),
-      query: this.filterSensitive(query),
-      body: this.filterSensitive(body),
+      query: this.filterSensitive(query as Record<string, any>),
+      body: this.filterSensitive(body as Record<string, any>),
       request_id,
-      ip: store?.get('ip'),
+      ip: store?.get('ip') as string,
     });
   }
 
@@ -106,6 +107,7 @@ export class TransformInterceptor<T>
       if (TransformInterceptor.SENSITIVE_KEYS.includes(key.toLowerCase())) {
         acc[key] = '******';
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         acc[key] = obj[key];
       }
       return acc;

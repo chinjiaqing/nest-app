@@ -18,6 +18,7 @@ export class RedisService {
   }
 
   async set(key: string, value: string, ...args: any[]): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await this.redisClient.set(key, value, ...args);
   }
 

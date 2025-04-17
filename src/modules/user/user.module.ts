@@ -17,7 +17,7 @@ import { RedisModule } from '../redis/redis.module';
         expiresIn: jwtConstants.expiresIn,
       },
     }),
-    RedisModule
+    RedisModule,
   ],
   controllers: [UserController],
   providers: [UserService, JwtAuthStrategy],

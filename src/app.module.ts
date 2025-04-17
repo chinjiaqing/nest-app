@@ -6,12 +6,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './modules/user/user.module';
 import { User } from './modules/user/entities/user.entity';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { jwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RedisService } from './modules/redis/redis.service';
 import { RedisModule } from './modules/redis/redis.module';
 import { LoggerService } from './modules/logger/logger.service';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { RequestContextMiddleware } from './common/middlewares/request-context.middleware';
 
 @Module({
@@ -23,7 +22,7 @@ import { RequestContextMiddleware } from './common/middlewares/request-context.m
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         type: 'mysql',
         entities: [User],
         host: configService.get('DB_HOST'),
@@ -50,7 +49,7 @@ import { RequestContextMiddleware } from './common/middlewares/request-context.m
   ],
 })
 export class AppModule {
-  configure(consumer:MiddlewareConsumer){
-    consumer.apply(RequestContextMiddleware).forRoutes('*')
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
   }
 }

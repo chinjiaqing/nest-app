@@ -1,15 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PublicApi } from 'src/common/decorators/public-api.decorator';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -33,10 +24,10 @@ export class UserController {
     return this.UserService.register(createUserDto);
   }
 
-  @ApiOperation({summary:'token测试'})
+  @ApiOperation({ summary: 'token测试' })
   @Get('/test')
-  test(){
-    return 'passed'
+  test() {
+    return 'passed';
   }
 
   @PublicApi()
