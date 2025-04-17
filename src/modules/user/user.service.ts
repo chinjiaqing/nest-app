@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -102,24 +103,32 @@ export class UserService {
   }
 
   async refreshToken(refresh_token: string) {
-    let userId = '';
-    try {
-      const { id } = this.jwtService.verify(refresh_token,{
-        secret: jwtConstants.refreshSecret
-      });
-      userId = id;
-    } catch (err) {
-      throw new HttpException(
-        '身份已过期，请重新登录[2]',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const payload = this.jwtService.verify(refresh_token, {
+      secret: jwtConstants.refreshSecret,
+    });
+    console.log(
+      '%c [ payload ]-110',
+      'font-size:13px; background:pink; color:#bf2c9f;',
+      payload,
+    );
+    // 判断refresh_token已经被消费，处于redis黑名单中
+    const isRevoked = await this.redisService.exists(
+      `blacklist:${refresh_token}`,
+    );
+    if (isRevoked) throw new UnauthorizedException();
+    const { id } = payload;
+    const user = await this.userRepository.findOne({ where: { id } });
     if (user) {
       const tokens = this.generateTokens(user);
+      await this.redisService.set(
+        `blacklist:${refresh_token}`,
+        'revoked',
+        'EX',
+        payload.exp - Math.floor(Date.now() / 1000),
+      );
       return tokens;
     } else {
-      throw new HttpException('身份已过期，请重新登录', HttpStatus.FORBIDDEN);
+      throw new UnauthorizedException();
     }
   }
 }

@@ -17,8 +17,12 @@ export class RedisService {
     return await this.redisClient.get(key);
   }
 
-  async set(key: string, value: string): Promise<void> {
-    await this.redisClient.set(key, value);
+  async set(key: string, value: string, ...args: any[]): Promise<void> {
+    await this.redisClient.set(key, value, ...args);
+  }
+
+  async exists(key: string) {
+    return await this.redisClient.exists(key);
   }
 
   async onModuleDestroy() {

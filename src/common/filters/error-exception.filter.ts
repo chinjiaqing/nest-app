@@ -10,6 +10,8 @@ import {
 } from '../stores/request-context.store';
 import { LoggerService } from 'src/modules/logger/logger.service';
 import { FastifyReply } from 'fastify';
+import { JsonWebTokenError } from '@nestjs/jwt';
+import { apiMessageConstants } from '../constants/api-message.constants';
 
 @Catch()
 export class GlobalErrorExceptionFilter<T> implements ExceptionFilter {
@@ -20,7 +22,11 @@ export class GlobalErrorExceptionFilter<T> implements ExceptionFilter {
     const response = ctx.getResponse<FastifyReply>(); // 获取请求上下文中的 response对象
     const statusCode = exception.getStatus?.() || 500; // 获取异常状态码
     const store = getRequestContextStore();
-    const message = exception.message ? exception.message : 'Internal server error';
+    let message = exception.message ? exception.message : 'Internal server error';
+
+    if(exception instanceof JsonWebTokenError) {
+      message = apiMessageConstants.UNAUTH
+    }
 
     const resp: ApiBadResponse = {
       code: exception?.code || -1,
