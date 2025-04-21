@@ -12,7 +12,7 @@ import { Repository } from 'typeorm';
 import * as bcryptjs from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service';
-import { jwtConstants } from 'src/common/constants/jwt.constants';
+import { JWT_CONSTANTS } from 'src/common/constants/jwt.constants';
 import { JwtUserCheckedPayload } from 'src/common/types';
 
 export interface UserRo {
@@ -35,16 +35,16 @@ export class UserService {
     const access_token = this.jwtService.sign(
       { id: user.id },
       {
-        secret: jwtConstants.secret,
-        expiresIn: jwtConstants.expiresIn,
+        secret: JWT_CONSTANTS.secret,
+        expiresIn: JWT_CONSTANTS.expiresIn,
       },
     );
 
     const refresh_token = this.jwtService.sign(
       { id: user.id },
       {
-        secret: jwtConstants.refreshSecret,
-        expiresIn: jwtConstants.refreshExpiresIn,
+        secret: JWT_CONSTANTS.refreshSecret,
+        expiresIn: JWT_CONSTANTS.refreshExpiresIn,
       },
     );
     return {
@@ -105,13 +105,8 @@ export class UserService {
     const payload = this.jwtService.verify<JwtUserCheckedPayload>(
       refresh_token,
       {
-        secret: jwtConstants.refreshSecret,
+        secret: JWT_CONSTANTS.refreshSecret,
       },
-    );
-    console.log(
-      '%c [ payload ]-110',
-      'font-size:13px; background:pink; color:#bf2c9f;',
-      payload,
     );
     // 判断refresh_token已经被消费，处于redis黑名单中
     const isRevoked = await this.redisService.exists(

@@ -4,13 +4,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
 import * as path from 'path';
-import { LoggerService } from './modules/logger/logger.service';
-import { GlobalErrorExceptionFilter } from './common/filters/error-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -23,16 +18,6 @@ async function bootstrap() {
     root: path.resolve(__dirname, '..', 'public'),
     prefix: '/static/',
   });
-
-  // 全局管道
-  app.useGlobalPipes(new ValidationPipe());
-
-  const loggerService = app.get(LoggerService);
-
-  // 过滤器
-  app.useGlobalFilters(new GlobalErrorExceptionFilter(loggerService));
-  app.useGlobalFilters(new HttpExceptionFilter(loggerService));
-  app.useGlobalInterceptors(new TransformInterceptor(loggerService));
 
   // swagger文档
   const swaggerConfig = new DocumentBuilder()

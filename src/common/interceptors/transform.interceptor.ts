@@ -5,20 +5,24 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Observable, map, tap, throwError, catchError } from 'rxjs';
-import { LoggerService } from 'src/modules/logger/logger.service';
 import {
   getRequestContextStore,
   getResponseTime,
 } from '../stores/request-context.store';
-import { ApiOkResponse } from '../types';
+import { ApiOkResponse, LogCategoryNameMap } from '../types';
 import { FastifyRequest } from 'fastify';
+import { InjectLogger } from '../decorators/logger.decorator';
+import { formatRequest } from '../utils/logger.utils';
 
 // 通用的api相应格式
 @Injectable()
 export class TransformInterceptor<T>
   implements NestInterceptor<T, ApiOkResponse<T>>
 {
-  constructor(private readonly logger: LoggerService) {}
+  constructor(
+    @InjectLogger('http')
+    private readonly httpLogger: LogCategoryNameMap['http'],
+  ) {}
 
   intercept(
     context: ExecutionContext,
@@ -26,13 +30,14 @@ export class TransformInterceptor<T>
   ): Observable<ApiOkResponse<T>> {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<FastifyRequest>();
-    this.logger.logRequest(request);
+    // this.logger.logRequest(request);
+    this.httpLogger.log('Request', formatRequest(request));
 
     return next.handle().pipe(
       catchError((err: Error) => {
         const store = getRequestContextStore();
         const request_id = store?.get('request_id') as string;
-        this.logger.error(
+        this.httpLogger.log(
           'Error',
           {
             request_id,
@@ -40,14 +45,16 @@ export class TransformInterceptor<T>
             timestamp: Date.now(),
             error_type: err.constructor.name,
           },
-          err.stack || '',
+          {
+            level: 'error',
+          },
         );
         return throwError(() => err);
       }),
       map((data) => this.formatResponse(data)),
       tap((data) => {
         // 记录响应日志
-        this.logger.logResponse(data);
+        this.httpLogger.log('Response', data);
       }),
     );
   }

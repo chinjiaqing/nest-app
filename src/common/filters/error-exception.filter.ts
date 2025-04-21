@@ -1,24 +1,23 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
-import { ApiBadResponse } from '../types';
+import { ApiBadResponse, IBaseLogger } from '../types';
 import {
   getRequestContextStore,
   getResponseTime,
 } from '../stores/request-context.store';
-import { LoggerService } from 'src/modules/logger/logger.service';
 import { FastifyReply } from 'fastify';
 import { JsonWebTokenError } from '@nestjs/jwt';
-import { apiMessageConstants } from '../constants/api-message.constants';
+import { API_MESSAGES_CONSTANTS } from '../constants/api-message.constants';
+import { InjectLogger } from '../decorators/logger.decorator';
+import { formatResponse } from '../utils/logger.utils';
 
 @Catch()
 export class GlobalErrorExceptionFilter implements ExceptionFilter {
-  constructor(private readonly logger: LoggerService) {}
+  constructor(
+    @InjectLogger('http')
+    private readonly httpLogger: IBaseLogger,
+  ) {}
 
   catch(exception: Error, host: ArgumentsHost) {
-    console.log(
-      '%c [ exception ]-17',
-      'font-size:13px; background:pink; color:#bf2c9f;',
-      exception,
-    );
     const ctx = host.switchToHttp(); // 获取请求上下文
     const response = ctx.getResponse<FastifyReply>(); // 获取请求上下文中的 response对象
     let statusCode: number = 500; // 获取异常状态码
@@ -29,7 +28,7 @@ export class GlobalErrorExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof JsonWebTokenError) {
       statusCode = 401;
-      message = apiMessageConstants.UNAUTH;
+      message = API_MESSAGES_CONSTANTS.UNAUTH;
     }
 
     const resp: ApiBadResponse = {
@@ -43,6 +42,6 @@ export class GlobalErrorExceptionFilter implements ExceptionFilter {
     response.status(statusCode);
     response.header('Content-Type', 'application/json; charset=utf-8');
     response.send(resp);
-    this.logger.info('Response', resp);
+    this.httpLogger.log('Response', formatResponse(resp));
   }
 }

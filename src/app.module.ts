@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, ValidationPipe } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import envConfig from './config/env';
@@ -6,12 +6,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './modules/user/user.module';
 import { User } from './modules/user/entities/user.entity';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { jwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RedisService } from './modules/redis/redis.service';
 import { RedisModule } from './modules/redis/redis.module';
-import { LoggerService } from './modules/logger/logger.service';
 import { RequestContextMiddleware } from './common/middlewares/request-context.middleware';
+import { LoggerModule } from './modules/logger/logger.module';
+import { GlobalErrorExceptionFilter } from './common/filters/error-exception.filter';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 @Module({
   imports: [
@@ -19,6 +22,7 @@ import { RequestContextMiddleware } from './common/middlewares/request-context.m
       isGlobal: true,
       envFilePath: envConfig.path,
     }),
+    LoggerModule.forRootAsync(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -44,8 +48,23 @@ import { RequestContextMiddleware } from './common/middlewares/request-context.m
       provide: APP_GUARD,
       useClass: jwtAuthGuard,
     },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalErrorExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
+    },
     RedisService,
-    LoggerService,
   ],
 })
 export class AppModule {

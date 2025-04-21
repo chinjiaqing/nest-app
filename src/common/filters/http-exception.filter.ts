@@ -6,18 +6,22 @@ import {
   HttpExceptionBody,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiBadResponse } from '../types';
+import { ApiBadResponse, LogCategoryNameMap } from '../types';
 import {
   getRequestContextStore,
   getResponseTime,
 } from '../stores/request-context.store';
-import { LoggerService } from 'src/modules/logger/logger.service';
-import { apiMessageConstants } from '../constants/api-message.constants';
+import { API_MESSAGES_CONSTANTS } from '../constants/api-message.constants';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { InjectLogger } from '../decorators/logger.decorator';
+import { formatRequest, formatResponse } from '../utils/logger.utils';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(private readonly logger: LoggerService) {}
+  constructor(
+    @InjectLogger('http')
+    private readonly httpLogger: LogCategoryNameMap['http'],
+  ) {}
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp(); // 获取请求上下文
@@ -42,7 +46,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // jwt 认证失败时，自定义消息
     if (exception instanceof UnauthorizedException) {
-      validMessage = apiMessageConstants.UNAUTH;
+      validMessage = API_MESSAGES_CONSTANTS.UNAUTH;
     }
     const errorResponse: ApiBadResponse = {
       data: null,
@@ -57,7 +61,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(status);
     response.header('Content-Type', 'application/json; charset=utf-8');
     response.send(errorResponse);
-    this.logger.logRequest(request);
-    this.logger.logResponse(errorResponse);
+    this.httpLogger.log('Request', formatRequest(request));
+    this.httpLogger.log('Response', formatResponse(errorResponse));
   }
 }
