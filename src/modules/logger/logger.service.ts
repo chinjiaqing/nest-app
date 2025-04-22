@@ -2,7 +2,7 @@ import { Injectable, Scope } from '@nestjs/common';
 import { IBaseLogMetadata, LogCategoryName } from 'src/common/types';
 import { createLogger, transports, format, Logger, Logform } from 'winston';
 import * as DailyRotateFile from 'winston-daily-rotate-file';
-
+import { SeqTransport } from '@datalust/winston-seq';
 const defaultLogMetaData: IBaseLogMetadata = {
   category: 'http',
   level: 'info',
@@ -52,6 +52,23 @@ export class LoggerService {
             format.colorize(), // 颜色化输出
             format.simple(), // 简单格式
           ),
+        }),
+        new SeqTransport({
+          serverUrl: 'http://localhost:5341',
+          apiKey: '6xmFrwnONsykYPSv3org',
+          onError: (e) => {
+            console.error(`SeqTransport Error`, e);
+          },
+          format: format.combine(
+            format.timestamp({
+              format: 'YYYY-MM-DD HH:mm:ss',
+            }),
+            format.printf((info: Logform.TransformableInfo) => {
+              return printfMessagePayload(info);
+            }),
+          ),
+          handleExceptions: true,
+          handleRejections: true,
         }),
       ],
     });

@@ -57,6 +57,9 @@ pnpm run deploy:prod
 
 [https://github.com/winstonjs/winston](https://github.com/winstonjs/winston)
 
+### Seq 日志存储查询
+[https://docs.datalust.co/docs/getting-started](https://docs.datalust.co/docs/getting-started)
+
 ### 使用 typeORM 进行数据库连接
 
 [https://github.com/nestjs/typeorm](https://github.com/nestjs/typeorm)
