@@ -1,7 +1,11 @@
 import { FastifyRequest } from 'fastify';
 import { LOGGER_CONSTANTS } from '../constants/logger.constants';
 import { getRequestContextStore } from '../stores/request-context.store';
-import { ApiBadResponse, ApiOkResponse, LogCategoryNameMap } from '../types';
+import {
+  ApiBadResponseBody,
+  ApiOkResponseBody,
+  LogCategoryNameMap,
+} from '../types';
 
 export const generateLoggerToken = <T extends keyof LogCategoryNameMap>(
   category: T,
@@ -51,6 +55,8 @@ export function formatRequest(request: FastifyRequest) {
  * @param response
  * @returns
  */
-export function formatResponse(response: ApiOkResponse | ApiBadResponse) {
+export function formatResponse(
+  response: ApiOkResponseBody<any> | ApiBadResponseBody,
+) {
   return response;
 }

@@ -9,15 +9,16 @@ import {
   getRequestContextStore,
   getResponseTime,
 } from '../stores/request-context.store';
-import { ApiOkResponse, LogCategoryNameMap } from '../types';
+import { ApiOkResponseBody, LogCategoryNameMap } from '../types';
 import { FastifyRequest } from 'fastify';
 import { InjectLogger } from '../decorators/logger.decorator';
 import { formatRequest } from '../utils/logger.utils';
+import { API_CODE_CONSTANTS } from '../constants/api.constants';
 
 // 通用的api相应格式
 @Injectable()
 export class TransformInterceptor<T>
-  implements NestInterceptor<T, ApiOkResponse<T>>
+  implements NestInterceptor<T, ApiOkResponseBody<T>>
 {
   constructor(
     @InjectLogger('http')
@@ -27,7 +28,7 @@ export class TransformInterceptor<T>
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<ApiOkResponse<T>> {
+  ): Observable<ApiOkResponseBody<T>> {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<FastifyRequest>();
     // this.logger.logRequest(request);
@@ -62,10 +63,10 @@ export class TransformInterceptor<T>
   /**
    * 格式化成功响应
    */
-  private formatResponse(data: any): ApiOkResponse<T> {
+  private formatResponse(data: any): ApiOkResponseBody<T> {
     const store = getRequestContextStore();
     return {
-      code: 0,
+      code: API_CODE_CONSTANTS.SUCCESS,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: data,
       msg: 'success',

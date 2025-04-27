@@ -4,9 +4,10 @@ import {
   ExceptionFilter,
   HttpException,
   HttpExceptionBody,
+  HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiBadResponse, LogCategoryNameMap } from '../types';
+import { ApiBadResponseBody, LogCategoryNameMap } from '../types';
 import {
   getRequestContextStore,
   getResponseTime,
@@ -15,6 +16,7 @@ import { API_MESSAGES_CONSTANTS } from '../constants/api-message.constants';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { InjectLogger } from '../decorators/logger.decorator';
 import { formatRequest, formatResponse } from '../utils/logger.utils';
+import { API_CODE_CONSTANTS } from '../constants/api.constants';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -48,10 +50,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof UnauthorizedException) {
       validMessage = API_MESSAGES_CONSTANTS.UNAUTH;
     }
-    const errorResponse: ApiBadResponse = {
+    if (status === (HttpStatus.NOT_FOUND as number)) {
+      validMessage = API_MESSAGES_CONSTANTS.NOT_FOUNT;
+    }
+    const errorResponse: ApiBadResponseBody = {
       data: null,
       msg: validMessage || message,
-      code: -1,
+      code: API_CODE_CONSTANTS.FAILED,
       request_id: store?.get('request_id') as string,
       response_time: getResponseTime(),
       timestamp: Date.now(),

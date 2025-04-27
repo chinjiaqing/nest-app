@@ -1,8 +1,9 @@
 import { Injectable, Scope } from '@nestjs/common';
 import { IBaseLogMetadata, LogCategoryName } from 'src/common/types';
 import { createLogger, transports, format, Logger, Logform } from 'winston';
-import * as DailyRotateFile from 'winston-daily-rotate-file';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import { SeqTransport } from '@datalust/winston-seq';
+import { ConfigService } from '@nestjs/config';
 const defaultLogMetaData: IBaseLogMetadata = {
   category: 'http',
   level: 'info',
@@ -36,7 +37,7 @@ export class LoggerService {
     DailyRotateFile.DailyRotateFileTransportOptions
   >();
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     this.logger = createLogger({
       level: 'info',
       format: format.combine(
@@ -54,8 +55,8 @@ export class LoggerService {
           ),
         }),
         new SeqTransport({
-          serverUrl: 'http://localhost:5341',
-          apiKey: '6xmFrwnONsykYPSv3org',
+          serverUrl: this.configService.get<string>('SEQ_HOST'),
+          apiKey: this.configService.get<string>('SEQ_SECRET'),
           onError: (e) => {
             console.error(`SeqTransport Error`, e);
           },
@@ -101,17 +102,15 @@ export class LoggerService {
     metadata: IBaseLogMetadata = defaultLogMetaData,
   ) {
     const logMethod = metadata.level || 'info';
+    const logTitle =
+      typeof params === 'string' ? message + ' ' + params : message;
+    const logBody = {
+      message: logTitle,
+      ...(typeof params === 'object' ? params : {}),
+      __LOG_NAME: metadata?.category,
+    };
     this.ensureTransport(metadata.category);
-    if (typeof params === 'object') {
-      // 如果 params 对象存在，则将日志以自定义格式输出
-      const logMessage = {
-        message,
-        ...params,
-      };
-      this.logger[logMethod](logMessage);
-    } else {
-      this.logger[logMethod](message + ' ' + params);
-    }
+    this.logger[logMethod](logBody);
   }
   error(
     message: string,

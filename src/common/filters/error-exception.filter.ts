@@ -1,5 +1,10 @@
-import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
-import { ApiBadResponse, IBaseLogger } from '../types';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpStatus,
+} from '@nestjs/common';
+import { ApiBadResponseBody, IBaseLogger } from '../types';
 import {
   getRequestContextStore,
   getResponseTime,
@@ -9,6 +14,7 @@ import { JsonWebTokenError } from '@nestjs/jwt';
 import { API_MESSAGES_CONSTANTS } from '../constants/api-message.constants';
 import { InjectLogger } from '../decorators/logger.decorator';
 import { formatResponse } from '../utils/logger.utils';
+import { API_CODE_CONSTANTS } from '../constants/api.constants';
 
 @Catch()
 export class GlobalErrorExceptionFilter implements ExceptionFilter {
@@ -20,19 +26,19 @@ export class GlobalErrorExceptionFilter implements ExceptionFilter {
   catch(exception: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp(); // 获取请求上下文
     const response = ctx.getResponse<FastifyReply>(); // 获取请求上下文中的 response对象
-    let statusCode: number = 500; // 获取异常状态码
+    let statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR; // 获取异常状态码
     const store = getRequestContextStore();
     let message: string = exception.message
       ? exception.message
       : 'Internal server error';
 
     if (exception instanceof JsonWebTokenError) {
-      statusCode = 401;
+      statusCode = HttpStatus.UNAUTHORIZED;
       message = API_MESSAGES_CONSTANTS.UNAUTH;
     }
 
-    const resp: ApiBadResponse = {
-      code: -1,
+    const resp: ApiBadResponseBody = {
+      code: API_CODE_CONSTANTS.FAILED,
       data: null,
       timestamp: Date.now(),
       msg: message,

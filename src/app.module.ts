@@ -1,14 +1,13 @@
 import { MiddlewareConsumer, Module, ValidationPipe } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import envConfig from './config/env';
+import { envFilePath } from './config';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './modules/user/user.module';
 import { User } from './modules/user/entities/user.entity';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { jwtAuthGuard } from './common/guards/jwt-auth.guard';
-import { RedisService } from './modules/redis/redis.service';
 import { RedisModule } from './modules/redis/redis.module';
 import { RequestContextMiddleware } from './common/middlewares/request-context.middleware';
 import { LoggerModule } from './modules/logger/logger.module';
@@ -20,7 +19,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: envConfig.path,
+      envFilePath: envFilePath.path,
     }),
     LoggerModule.forRootAsync(),
     TypeOrmModule.forRootAsync({
@@ -62,9 +61,14 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     },
     {
       provide: APP_PIPE,
-      useClass: ValidationPipe,
+      useFactory: () =>
+        new ValidationPipe({
+          transform: true,
+          transformOptions: {
+            enableImplicitConversion: true,
+          },
+        }),
     },
-    RedisService,
   ],
 })
 export class AppModule {

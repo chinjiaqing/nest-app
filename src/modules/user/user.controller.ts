@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, LoginRespDto } from './dto/create-user.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PublicApi } from 'src/common/decorators/public-api.decorator';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ApiBaseResponse } from 'src/common/decorators/api-response.decorator';
 
 @ApiTags('用户')
 @Controller('user')
@@ -12,6 +13,7 @@ export class UserController {
 
   @PublicApi()
   @ApiOperation({ summary: '登录' })
+  @ApiBaseResponse(LoginRespDto)
   @Post('/login')
   login(@Body() userDto: CreateUserDto) {
     return this.UserService.login(userDto);
@@ -32,6 +34,7 @@ export class UserController {
 
   @PublicApi()
   @ApiOperation({ summary: '刷新token' })
+  @ApiBaseResponse(LoginRespDto)
   @Post('/refresh')
   refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.UserService.refreshToken(refreshTokenDto.refresh_token);
